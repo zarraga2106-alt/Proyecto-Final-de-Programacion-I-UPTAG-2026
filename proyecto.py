@@ -2,9 +2,8 @@ import os
 import hashlib
 import getpass
 
-# --- SISTEMA DE USUARIOS ---
 class Usuario:
-    def _init_(self, nombre_usuario, contrasena_encriptada):
+    def __init__(self, nombre_usuario, contrasena_encriptada):
         self.nombre_usuario = nombre_usuario
         self.contrasena_encriptada = contrasena_encriptada
 
@@ -12,7 +11,7 @@ class Usuario:
         return f"{self.nombre_usuario},{self.contrasena_encriptada}\n"
 
 class GestorUsuarios:
-    def _init_(self, archivo="usuarios_pro.txt"):
+    def __init__(self, archivo="usuarios_pro.txt"):
         self.archivo = archivo
         self.usuarios = {}
         self._cargar_datos()
@@ -61,16 +60,14 @@ class GestorUsuarios:
             print("Contraseña incorrecta.")
             return False
 
-# --- CLASE BASE (Herencia) ---
 class Item:
-    def _init_(self, codigo, nombre):
+    def __init__(self, codigo, nombre):
         self.codigo = codigo 
         self.nombre = nombre.strip().title()
 
-# --- CLASE DERIVADA ---
 class Producto(Item):
-    def _init_(self, codigo, nombre, precio, cantidad):
-        super()._init_(codigo, nombre)
+    def __init__(self, codigo, nombre, precio, cantidad):
+        super().__init__(codigo, nombre)
         self.precio = precio
         self.cantidad = cantidad
 
@@ -90,13 +87,12 @@ class Producto(Item):
         if int(valor) < 0: raise ValueError("Stock negativo no permitido.")
         self._cantidad = int(valor)
 
-    def _str_(self):
+    def __str__(self):
         return f"ID: {self.codigo:<10} | {self.nombre:<15} | ${self.precio:>8.2f} | Stock: {self.cantidad:>4}"
 
     def a_csv(self):
         return f"{self.codigo},{self.nombre},{self.precio},{self.cantidad}\n"
 
-# --- CAPTURA Y VALIDACIÓN ESTRICTA ---
 def solicitar_solo_numeros(mensaje, permitir_decimal=False):
     while True:
         try:
@@ -108,9 +104,8 @@ def solicitar_solo_numeros(mensaje, permitir_decimal=False):
         except ValueError:
             print("Error: Ingrese un número válido.")
 
-# --- LÓGICA DE INVENTARIO ---
 class Inventario:
-    def _init_(self, nombre_archivo="inventario_pro.txt"):
+    def __init__(self, nombre_archivo="inventario_pro.txt"):
         self.archivo = nombre_archivo
         self.productos = {}
         self._cargar_datos()
@@ -139,12 +134,9 @@ class Inventario:
         else:
             print("❌ Código no encontrado.")
 
-    # --- NUEVA FUNCIÓN DE BÚSQUEDA ---
     def buscar(self, criterio):
-        """Busca por código exacto o coincidencia parcial en el nombre."""
         encontrados = []
         criterio = criterio.lower().strip()
-        
         for producto in self.productos.values():
             if criterio == producto.codigo or criterio in producto.nombre.lower():
                 encontrados.append(producto)
@@ -154,83 +146,60 @@ class Inventario:
         with open(self.archivo, "w", encoding="utf-8") as f:
             f.writelines(producto.a_csv() for producto in self.productos.values())
 
-# --- SISTEMA DE AUTENTICACIÓN (NUEVO MENÚ) ---
 def menu_auth():
     gestor = GestorUsuarios()
-    
     while True:
-        print(f"\n{'='*15} SISTEMA DE AUTENTICACIÓN {'='*15}")
-        print("1. Iniciar Sesión | 2. Registrarse | 3. Salir")
+        print(f"\n{'='*15} SISTEMA DE ACCESO {'='*15}")
+        print("1. Iniciar Sesión\n2. Registrarse\n3. Salir")
         opc = input("Seleccione: ").strip()
 
         if opc == "1":
-            print("\n--- INICIAR SESIÓN ---")
             usuario = input("Usuario: ").strip()
             contrasena = getpass.getpass("Contraseña: ").strip()
-            
             if gestor.autenticar(usuario, contrasena):
-                print(f"\n¡Bienvenido/a, {usuario}!")
-                menu(usuario) # Pasar al menú principal de inventario
-            
+                print(f"\n¡Acceso concedido! Bienvenido, {usuario}.")
+                menu_principal(usuario)
         elif opc == "2":
-            print("\n--- REGISTRO DE USUARIO ---")
-            nuevo_usuario = input("Nuevo usuario: ").strip()
-            nueva_contrasena = getpass.getpass("Nueva contraseña: ").strip()
-            contrasena_confirmacion = getpass.getpass("Confirmar contraseña: ").strip()
-            
-            if nueva_contrasena == contrasena_confirmacion:
-                gestor.registrar(nuevo_usuario, nueva_contrasena)
+            nuevo_u = input("Nuevo usuario: ").strip()
+            nueva_c = getpass.getpass("Nueva contraseña: ").strip()
+            confirmar = getpass.getpass("Confirme contraseña: ").strip()
+            if nueva_c == confirmar:
+                gestor.registrar(nuevo_u, nueva_c)
             else:
-                print("Las contraseñas no coinciden.")
-                
+                print("❌ Las contraseñas no coinciden.")
         elif opc == "3":
-            print("Saliendo del sistema...")
+            print("Finalizando programa...")
             break
-        else:
-            print("Opción inválida.")
 
-# --- MENÚ PRINCIPAL ---
-def menu(usuario_actual):
+def menu_principal(usuario_actual):
     inv = Inventario()
-    
     while True:
-        print(f"\n{'='*15} GESTIÓN NUMÉRICA - Usuario: {usuario_actual} {'='*15}")
-        print("1. Agregar | 2. Ver Todo | 3. Buscar | 4. Borrar | 5. Salir")
+        print(f"\n{'#'*10} INVENTARIO - Sesión: {usuario_actual} {'#'*10}")
+        print("1. Agregar Producto\n2. Ver Todo\n3. Buscar\n4. Borrar\n5. Cerrar Sesión y Guardar")
         opc = input("Seleccione: ")
 
         if opc == "1":
-            codigo = solicitar_solo_numeros("Código (solo números): ")
-            nombre = input("Nombre del producto: ")
-            precio = solicitar_solo_numeros("Precio: ", permitir_decimal=True)
-            cantidad = solicitar_solo_numeros("Cantidad (Stock): ")
-            inv.agregar(codigo, nombre, precio, cantidad)
-
+            cod = solicitar_solo_numeros("Código: ")
+            nom = input("Nombre: ")
+            pre = solicitar_solo_numeros("Precio: ", True)
+            can = solicitar_solo_numeros("Cantidad: ")
+            inv.agregar(cod, nom, pre, can)
         elif opc == "2":
-            print("\n" + "="*50)
-            if not inv.productos: 
-                print("Inventario vacío.")
-            else:
-                for producto in inv.productos.values(): print(producto)
-            print("="*50)
-
+            print("\n--- LISTA DE PRODUCTOS ---")
+            for p in inv.productos.values(): print(p)
+            if not inv.productos: print("No hay productos registrados.")
         elif opc == "3":
-            busqueda = input("Ingrese el código o nombre a buscar: ")
-            resultados = inv.buscar(busqueda)
-            print("\n" + "-"*20 + " RESULTADOS " + "-"*20)
-            if resultados:
-                for resultado in resultados: print(resultado)
-            else:
-                print("No se encontraron coincidencias.")
-            print("-"*52)
-
+            crit = input("Buscar (Código o Nombre): ")
+            resultados = inv.buscar(crit)
+            for r in resultados: print(r)
+            if not resultados: print("Sin coincidencias.")
         elif opc == "4":
-            codigo_borrar = solicitar_solo_numeros("Ingrese el código numérico a borrar: ")
-            inv.borrar(codigo_borrar)
-
+            cod_b = solicitar_solo_numeros("Código a eliminar: ")
+            inv.borrar(cod_b)
         elif opc == "5":
             inv.guardar()
-            print("Cambios guardados. Saliendo...")
+            print("📦 Datos guardados. Volviendo al login...")
             break
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     menu_auth()
