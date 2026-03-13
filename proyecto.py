@@ -146,6 +146,7 @@ class Inventario:
         with open(self.archivo, "w", encoding="utf-8") as f:
             f.writelines(producto.a_csv() for producto in self.productos.values())
 
+
 def menu_auth():
     gestor = GestorUsuarios()
     while True:
